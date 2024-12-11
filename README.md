@@ -1,6 +1,7 @@
 # Jayo's VRM Hair Optimizer Plugin for VNyan
 
 A VNyan Plugin that automatically combines hair meshes on standard VRM-structured models to greatly improve performance
+![Plugin Promo Inage](https://github.com/user-attachments/assets/add95661-9445-40ba-a30b-08b9dd92c485)
 
 # Table of contents
 1. [Compatability Notice](#compatability-notice)
