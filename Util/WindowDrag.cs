@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace JayoVRMHairOptimizerPlugin.VNyanPluginHelper
+namespace JayoVRMHairOptimizerPlugin.Util
 {
     class WindowFocus : MonoBehaviour, IPointerDownHandler
     {

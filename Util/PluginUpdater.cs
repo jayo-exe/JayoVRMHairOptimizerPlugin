@@ -8,9 +8,9 @@ using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace JayoVRMHairOptimizerPlugin.VNyanPluginHelper
+namespace JayoVRMHairOptimizerPlugin.Util
 {
-    class VNyanPluginUpdater
+    class PluginUpdater
     {
         public event Action<string> OpenUrlRequested;
         
@@ -21,7 +21,7 @@ namespace JayoVRMHairOptimizerPlugin.VNyanPluginHelper
 
         private bool updateAvailable = false;
 
-        public VNyanPluginUpdater(string repoName, string currentVersion, string updateLink)
+        public PluginUpdater(string repoName, string currentVersion, string updateLink)
         {
             this.repoName = repoName;
             this.currentVersion = currentVersion;
@@ -39,6 +39,7 @@ namespace JayoVRMHairOptimizerPlugin.VNyanPluginHelper
                 string JsonResponse = Reader.ReadToEnd();
                 JArray Releases = JArray.Parse(JsonResponse);
                 latestVersion = Releases[0]["tag_name"].ToString();
+                Debug.Log($"Current {currentVersion} latest: {latestVersion}");
                 updateAvailable = currentVersion != latestVersion;
             }
             catch (Exception e)

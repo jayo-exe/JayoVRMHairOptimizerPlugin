@@ -37,7 +37,6 @@ namespace JayoVRMHairOptimizerPlugin
             if(actionHandlers.ContainsKey(triggerAction)) actionHandlers[triggerAction](value1, value2, value3, text1, text2, text3);
         }
 
-
         // handler for the _xjho_enable trigger, fires the event to signal the plugin about the request
         public static void handleEnableOptimizer(int value1, int value2, int value3, string text1, string text2, string text3)
         {

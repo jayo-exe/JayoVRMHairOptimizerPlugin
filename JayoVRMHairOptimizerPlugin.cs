@@ -1,18 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.IO;
-using System.Net;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Rendering;
-using UnityEngine.SceneManagement;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
-using System.Linq.Expressions;
-using VNyanInterface;
-using JayoVRMHairOptimizerPlugin.VNyanPluginHelper;
+using JayoVRMHairOptimizerPlugin.Util;
+using TMPro;
 
 namespace JayoVRMHairOptimizerPlugin
 {
@@ -21,21 +12,20 @@ namespace JayoVRMHairOptimizerPlugin
         public GameObject windowPrefab;
         public GameObject window;
 
-        private MainThreadDispatcher mainThread;
         private JayoVRMHairOptimizer hairOptimizer;
 
-        private VNyanHelper _VNyanHelper;
-        private VNyanPluginUpdater updater;
+        private static JayoVRMHairOptimizerPlugin _instance;
+        private PluginUpdater updater;
 
-        private GameObject statusText;
-        private GameObject infoText;
-        private GameObject enableButton;
-        private GameObject disableButton;
-        private GameObject autoStartToggle;
+        private TMP_Text statusText;
+        private TMP_Text infoText;
+        private Button enableButton;
+        private Button disableButton;
+        private Toggle autoStartToggle;
 
         private bool enableOnStart;
 
-        private string currentVersion = "v0.1.0";
+        private string currentVersion = "v0.2.0";
         private string repoName = "jayo-exe/JayoVRMHairOptimizerPlugin";
         private string updateLink = "https://jayo-exe.itch.io/vrm-hair-optimizer-for-vnyan";
 
@@ -48,11 +38,20 @@ namespace JayoVRMHairOptimizerPlugin
         public void Awake()
         {
 
-            Debug.Log($"Hair Optimizer Plugin is Awake!");
-            _VNyanHelper = new VNyanHelper();
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+            }
+            else
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
 
-            updater = new VNyanPluginUpdater(repoName, currentVersion, updateLink);
-            updater.OpenUrlRequested += (url) => mainThread.Enqueue(() => { Application.OpenURL(url); });
+            Debug.Log($"Hair Optimizer Plugin is Awake!");
+
+            updater = new PluginUpdater(repoName, currentVersion, updateLink);
+            updater.OpenUrlRequested += (url) => MainThreadDispatcher.Enqueue(() => { Application.OpenURL(url); });
 
             enableOnStart = false;
 
@@ -62,7 +61,6 @@ namespace JayoVRMHairOptimizerPlugin
 
             //Debug.Log($"Beginning Plugin Setup");
 
-            mainThread = gameObject.AddComponent<MainThreadDispatcher>();
             hairOptimizer = gameObject.AddComponent<JayoVRMHairOptimizer>();
             hairOptimizer.OptimizerStatusChanged += OnStatusChanged;
             hairOptimizer.OptimizerInfoChanged += OnInfoChanged;
@@ -70,11 +68,12 @@ namespace JayoVRMHairOptimizerPlugin
             HairOptimizerTriggerHandler.EnableRequested += () => { enableOptimizer(); };
             HairOptimizerTriggerHandler.DisableRequested += () => { disableOptimizer(); };
 
-            _VNyanHelper.registerTriggerListener(HairOptimizerTriggerHandler.GetInstance());
+            VNyanInterface.VNyanInterface.VNyanTrigger.registerTriggerListener(HairOptimizerTriggerHandler.GetInstance());
             
             try
             {
-                window = _VNyanHelper.pluginSetup(this, "VRM Hair Optimizer", windowPrefab);
+                VNyanInterface.VNyanInterface.VNyanUI.registerPluginButton("VRM Hair Optimizer", this);
+                window = (GameObject)VNyanInterface.VNyanInterface.VNyanUI.instantiateUIPrefab(windowPrefab);
             }
             catch (Exception e)
             {
@@ -84,11 +83,11 @@ namespace JayoVRMHairOptimizerPlugin
             // Hide the window by default
             if (window != null)
             {
-                statusText = window.transform.Find("Panel/StatusText").gameObject;
-                infoText = window.transform.Find("Panel/InfoText").gameObject;
-                enableButton = window.transform.Find("Panel/EnableButton").gameObject;
-                disableButton = window.transform.Find("Panel/DisableButton").gameObject;
-                autoStartToggle = window.transform.Find("Panel/AutoStartToggle").gameObject;
+                statusText = window.transform.Find("Panel/StatusRow/StatusText").GetComponent<TMP_Text>();
+                infoText = window.transform.Find("Panel/StatusRow/InfoText").GetComponent<TMP_Text>();
+                enableButton = window.transform.Find("Panel/ControlRow/EnableButton").GetComponent<Button>();
+                disableButton = window.transform.Find("Panel/ControlRow/DisableButton").GetComponent<Button>();
+                autoStartToggle = window.transform.Find("Panel/ControlRow/AutoStart/FieldHead/AutoStartToggle").GetComponent<Toggle>();
 
                 window.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 0);
                 window.SetActive(false);
@@ -105,11 +104,11 @@ namespace JayoVRMHairOptimizerPlugin
 
                     window.transform.Find("Panel/TitleBar/CloseButton").GetComponent<Button>().onClick.AddListener(() => { closePluginWindow(); });
                     
-                    enableButton.GetComponent<Button>().onClick.AddListener(() => { enableOptimizer(); });
-                    disableButton.GetComponent<Button>().onClick.AddListener(() => { disableOptimizer(); });
+                    enableButton.onClick.AddListener(() => { enableOptimizer(); });
+                    disableButton.onClick.AddListener(() => { disableOptimizer(); });
                     
-                    autoStartToggle.GetComponent<Toggle>().onValueChanged.AddListener((v) => { enableOnStart = v; });
-                    autoStartToggle.GetComponent<Toggle>().SetIsOnWithoutNotify(enableOnStart);
+                    autoStartToggle.onValueChanged.AddListener((v) => { enableOnStart = v; });
+                    autoStartToggle.SetIsOnWithoutNotify(enableOnStart);
 
                     if(enableOnStart) enableOptimizer();
                     else disableOptimizer();
@@ -123,7 +122,7 @@ namespace JayoVRMHairOptimizerPlugin
 
         public void loadPluginSettings()
         {
-            Dictionary<string, string> settings = _VNyanHelper.loadPluginSettingsData("JayoVRMHairOptimizerPlugin.cfg");
+            Dictionary<string, string> settings = VNyanInterface.VNyanInterface.VNyanSettings.loadSettings("JayoVRMHairOptimizerPlugin.cfg");
             if (settings != null)
             {
                 string enableOnStartValue;
@@ -134,12 +133,12 @@ namespace JayoVRMHairOptimizerPlugin
 
         public void OnStatusChanged(string newStatus)
         {
-            mainThread.Enqueue(() => { statusText.GetComponent<Text>().text = newStatus; });
+            MainThreadDispatcher.Enqueue(() => { statusText.text = newStatus; });
         }
 
         public void OnInfoChanged(string newInfo)
         {
-            mainThread.Enqueue(() => { infoText.GetComponent<Text>().text = newInfo; });
+            MainThreadDispatcher.Enqueue(() => { infoText.text = newInfo; });
         }
 
         public void savePluginSettings()
@@ -147,8 +146,7 @@ namespace JayoVRMHairOptimizerPlugin
             Dictionary<string, string> settings = new Dictionary<string, string>();
             settings["EnableOnStart"] = enableOnStart.ToString();
 
-
-            _VNyanHelper.savePluginSettingsData("JayoVRMHairOptimizerPlugin.cfg", settings);
+            VNyanInterface.VNyanInterface.VNyanSettings.saveSettings("JayoVRMHairOptimizerPlugin.cfg", settings);
         }
 
         public void pluginButtonClicked()
@@ -174,16 +172,16 @@ namespace JayoVRMHairOptimizerPlugin
         {
             if (hairOptimizer.isRunning) return;
             hairOptimizer.Activate();
-            enableButton.SetActive(false);
-            disableButton.SetActive(true);
+            enableButton.gameObject.SetActive(false);
+            disableButton.gameObject.SetActive(true);
         }
 
         public void disableOptimizer()
         {
             if (!hairOptimizer.isRunning) return;
             hairOptimizer.Deactivate();
-            enableButton.SetActive(true);
-            disableButton.SetActive(false);
+            enableButton.gameObject.SetActive(true);
+            disableButton.gameObject.SetActive(false);
         }
 
         

@@ -12,7 +12,6 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.Linq.Expressions;
 using VNyanInterface;
-using JayoVRMHairOptimizerPlugin.VNyanPluginHelper;
 
 namespace JayoVRMHairOptimizerPlugin
 {
@@ -26,7 +25,6 @@ namespace JayoVRMHairOptimizerPlugin
         public bool isRunning {get { return running; }}
         public string currentStatus { get { return status; } }
 
-        private VNyanHelper _VNyanHelper;
         private GameObject lastAvatar;
         private GameObject hairObject;
         private GameObject hairsObject;
@@ -39,7 +37,6 @@ namespace JayoVRMHairOptimizerPlugin
 
         public void Awake()
         {
-            _VNyanHelper = new VNyanHelper();
             running = false;
             optimized = false;
             changeStatus("Awake");
@@ -52,7 +49,7 @@ namespace JayoVRMHairOptimizerPlugin
         {
             if (!running) return;
 
-            GameObject avatar = _VNyanHelper.getAvatarObject();
+            GameObject avatar = (GameObject)VNyanInterface.VNyanInterface.VNyanAvatar.getAvatarObject();
             if (avatar == null)
             {
                 changeInfo("No Avatar Found");
@@ -97,7 +94,7 @@ namespace JayoVRMHairOptimizerPlugin
         private void optimizeHair() {
             if (optimized) return;
 
-            GameObject avatar = _VNyanHelper.getAvatarObject();
+            GameObject avatar = (GameObject)VNyanInterface.VNyanInterface.VNyanAvatar.getAvatarObject();
             changeStatus("No avatar");
             if (!avatar) return;
             changeStatus("Begin Optimizing");
@@ -130,7 +127,7 @@ namespace JayoVRMHairOptimizerPlugin
         private void revertHair() {
             if (!optimized) return;
 
-            GameObject avatar = _VNyanHelper.getAvatarObject();
+            GameObject avatar = (GameObject)VNyanInterface.VNyanInterface.VNyanAvatar.getAvatarObject();
             if (!avatar)
             {
                 changeStatus("No avatar to revert");
